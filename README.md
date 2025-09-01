@@ -1,39 +1,42 @@
-# Intelligent Conversation RAG System
+# B2B RAG Sales Assistant System
 
-RAG (Retrieval-Augmented Generation) tabanlı akıllı soru-cevap sistemi. Multi-turn conversation engine, context memory sistemi ve OpenRouter API entegrasyonu ile güçlendirilmiş gelişmiş konuşma sistemi.
+B2B satış süreçleri için geliştirilmiş akıllı RAG sistemi. Ürün keşfi, derinlemesine müşteri sorguları ve otomatik sipariş oluşturma ile desteklenmiş AI satış danışmanı.
 
 ## Özellikler
 
 ### ✅ Tamamlanan Özellikler
-- **Multi-turn Conversation Engine**: Sürekli konuşma takibi
-- **Context Memory Sistemi**: Memory-keeper MCP entegrasyonu
-- **RAG Tabanlı Arama**: ChromaDB ile vektör arama
-- **Sipariş Workflow'u**: Otomatik sipariş oluşturma ve kayıt
-- **Web Arayüzü**: Flask tabanlı web chat arayüzü
-- **CLI Arayüzü**: Komut satırı etkileşimi
+- **B2B Product Discovery**: Akıllı ürün keşif ve öneri sistemi
+- **Multi-turn Conversation**: Bağlamsal konuşma yönetimi
+- **Customer Profiling**: Müşteri segmentasyonu ve analiz
+- **Order Management**: Otomatik sipariş oluşturma ve onay süreci
+- **PostgreSQL Integration**: Güvenli veri yönetimi ve raporlama
+- **Web Interface**: Flask tabanlı kullanıcı dostu arayüz
+- **CLI Tools**: Sistem yönetimi ve test araçları
 
 ### 🔄 Devam Eden Özellikler
-- **OpenRouter API Entegrasyonu**: Regex yerine gerçek AI kullanımı
+- **OpenRouter AI Integration**: Regex mantığından doğal dil işlemeye geçiş
+- **Advanced Analytics**: Satış performansı ve trend analizi
 
 ## Teknik Altyapı
 
 ### Veritabanı
-- **SQLite**: Ana veritabanı yönetimi
-- **ChromaDB**: Vektör tabanlı arama ve embedding
-- **Memory-keeper MCP**: Context takibi ve oturum yönetimi
+- **PostgreSQL**: Ana veri deposu (müşteriler, ürünler, siparişler)
+- **ChromaDB**: Vektör tabanlı ürün arama (opsiyonel)
+- **Memory-keeper MCP**: Conversation context yönetimi
 
 ### API Entegrasyonları
-- **OpenRouter API**: Claude-3.5-sonnet modeli
-- **Embedding API**: all-MiniLM-L6-v2 modeli
+- **OpenRouter API**: GPT-3.5-turbo / Claude-3.5-sonnet
+- **psycopg2**: PostgreSQL bağlantı yönetimi
+- **Flask**: Web API sunucusu
 
 ### Dosya Yapısı
 
 #### Ana Sistem Dosyaları
-- `chat_system.py` - Ana chat sistemi
-- `conversation_system.py` - Konuşma yönetimi
-- `intelligent_conversation.py` - AI destekli konuşma
-- `rag_system.py` - RAG tabanlı arama sistemi
-- `progressive_inquiry_system.py` - Aşamalı sorgulama
+- `rag_system.py` - B2B RAG çekirdek sistemi
+- `conversation_system.py` - Konuşma durumu yönetimi  
+- `intelligent_conversation.py` - AI destekli satış danışmanlığı
+- `progressive_inquiry_system.py` - Aşamalı müşteri profilleme
+- `chat_system.py` - Unified conversation interface
 
 #### CLI Arayüzleri
 - `interactive_cli.py` - Etkileşimli CLI
@@ -50,19 +53,28 @@ RAG (Retrieval-Augmented Generation) tabanlı akıllı soru-cevap sistemi. Multi
 - `complex_search_tests.py` - Karmaşık arama testleri
 
 #### Veritabanı
-- `db_schema.sql` - Ana veritabanı şeması
-- `add_orders_table.sql` - Sipariş tablosu eklentisi
-- `conversation_orders.sql` - Konuşma-sipariş ilişkisi
+- `db_schema.sql` - PostgreSQL B2B şeması
+- `add_orders_table.sql` - Sipariş yönetimi tablları
+- `conversation_orders.sql` - Conversation-Order mapping
 
 #### Veri Dosyaları
-- CSV dosyaları: Bakım verisi importu
-- `RAG_SYSTEM_REPORT.md` - Sistem raporu
+- CSV dosyaları: B2B müşteri ve ürün verileri
+- `RAG_SYSTEM_REPORT.md` - Sistem analiz raporu
 
 ## Kurulum ve Çalıştırma
 
 ### Gereksinimler
 ```bash
-pip install flask sqlite3 chromadb requests openai numpy pandas
+pip install flask psycopg2 chromadb requests openai python-dotenv
+```
+
+### PostgreSQL Kurulumu
+```sql
+-- Veritabanı oluştur
+CREATE DATABASE b2b_rag_system;
+
+-- Şemayı yükle
+psql -d b2b_rag_system -f db_schema.sql
 ```
 
 ### Web Arayüzü
@@ -76,21 +88,34 @@ python app.py
 python interactive_cli.py
 ```
 
-## Gelişim Süreci
+## Sistem Mimarisi
 
-Proje 6 ana aşamada tamamlanmıştır:
-1. ✅ Konuşma ortamı kurulumu - context takibi ile
+### B2B Satış Süreci
+1. **Müşteri Profilleme** → Firma bilgileri ve ihtiyaç analizi
+2. **Ürün Keşfi** → PostgreSQL + RAG tabanlı ürün önerisi 
+3. **Derinlemesine Sorgular** → AI destekli ihtiyaç belirleme
+4. **Sipariş Oluşturma** → Otomatik fiyatlandırma ve onay
+5. **Takip Sistemi** → Süreç yönetimi ve raporlama
+
+### Gelişim Aşamaları
+1. ✅ PostgreSQL B2B şeması ve veri modeli
 2. ✅ Multi-turn conversation engine
-3. ✅ Context memory sistemi
-4. ✅ Sipariş oluşturma workflow'u entegrasyonu
-5. ✅ Sipariş onay ve kayıt sistemi
-6. ✅ Memory-keeper MCP entegrasyonu
-7. 🔄 OpenRouter API entegrasyonu (devam ediyor)
+3. ✅ Customer profiling ve segmentasyon
+4. ✅ Product discovery RAG sistemi
+5. ✅ Order workflow automation
+6. ✅ Memory-keeper context yönetimi
+7. 🔄 OpenRouter AI integration (regex → doğal dil)
 
-## Kullanım Alanları
+## B2B Kullanım Senaryoları
 
-- Müşteri hizmetleri chat botları
-- Teknik destek sistemleri
-- Bilgi bankası sorgulama
-- Akıllı asistan uygulamaları
-- Dokümantasyon arama sistemleri
+### Satış Süreçleri
+- **Lead Qualification**: AI destekli potansiyel müşteri değerlendirmesi
+- **Product Recommendation**: Müşteri ihtiyaçlarına göre akıllı ürün önerisi
+- **Quote Generation**: Otomatik fiyat teklifi ve sipariş oluşturma
+- **Sales Analytics**: Satış performansı ve trend analizi
+
+### Müşteri Deneyimi  
+- **24/7 Sales Support**: Kesintisiz satış danışmanlığı hizmeti
+- **Technical Consultation**: Ürün spesifikasyonu ve teknik destek
+- **Order Tracking**: Sipariş durumu takibi ve güncellemeler
+- **Account Management**: Müşteri hesap yönetimi ve geçmiş analizi
