@@ -1,6 +1,6 @@
-# TUSAŞ HGU Bakım Sistemı
+# Intelligent Conversation RAG System
 
-Türk Havacılık ve Uzay Sanayii (TUSAŞ) için geliştirilmiş akıllı bakım sistemi. Multi-turn conversation engine, context memory sistemi ve OpenRouter API entegrasyonu ile güçlendirilmiş RAG tabanlı soru-cevap sistemi.
+RAG (Retrieval-Augmented Generation) tabanlı akıllı soru-cevap sistemi. Multi-turn conversation engine, context memory sistemi ve OpenRouter API entegrasyonu ile güçlendirilmiş gelişmiş konuşma sistemi.
 
 ## Özellikler
 
@@ -87,6 +87,10 @@ Proje 6 ana aşamada tamamlanmıştır:
 6. ✅ Memory-keeper MCP entegrasyonu
 7. 🔄 OpenRouter API entegrasyonu (devam ediyor)
 
-## Lisans
+## Kullanım Alanları
 
-Bu proje TUSAŞ için özel olarak geliştirilmiştir.
+- Müşteri hizmetleri chat botları
+- Teknik destek sistemleri
+- Bilgi bankası sorgulama
+- Akıllı asistan uygulamaları
+- Dokümantasyon arama sistemleri
