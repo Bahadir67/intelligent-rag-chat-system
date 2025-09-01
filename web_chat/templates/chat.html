@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 B2B Silindir AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .ai .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #4facfe;
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 0;
+            text-align: left;
+        }
+
+        .typing-dots {
+            display: inline-block;
+            width: 60px;
+            height: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 8px 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4facfe;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .context-info {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            max-width: 200px;
+            display: none;
+        }
+
+        .reset-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message-bubble {
+                max-width: 85%;
+            }
+            
+            .context-info {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            🤖 B2B Silindir AI Assistant
+            <button class="reset-btn" onclick="resetChat()">🔄 Yeni Sohbet</button>
+        </div>
+        
+        <div class="chat-messages" id="messages">
+            <div class="message ai">
+                <div class="message-bubble">
+                    Merhaba! B2B silindir uzmanınızım. Size nasıl yardımcı olabilirim? 😊
+                </div>
+                <div class="message-time">Az önce</div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typing">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="messageInput" placeholder="Mesajınızı yazın... (örn: 100 çap silindir lazım)" onkeypress="handleKeyPress(event)">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Gönder</button>
+        </div>
+
+        <div class="context-info" id="contextInfo">
+            <strong>Konuşma Durumu:</strong><br>
+            <span id="contextDetails">Başlangıç</span>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false;
+
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('tr-TR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        function addMessage(message, isUser = false) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${message}</div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTyping() {
+            isTyping = true;
+            document.getElementById('typing').style.display = 'block';
+            document.getElementById('sendBtn').disabled = true;
+            
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            isTyping = false;
+            document.getElementById('typing').style.display = 'none';
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        function updateContext(context, stage) {
+            const contextInfo = document.getElementById('contextInfo');
+            const contextDetails = document.getElementById('contextDetails');
+            
+            let details = `Stage: ${stage}`;
+            if (context.diameter) details += `<br>Çap: ${context.diameter}mm`;
+            if (context.stroke) details += `<br>Strok: ${context.stroke}mm`;
+            if (context.features && context.features.length > 0) {
+                details += `<br>Özellikler: ${context.features.join(', ')}`;
+            }
+            
+            contextDetails.innerHTML = details;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message || isTyping) return;
+            
+            // Add user message
+            addMessage(message, true);
+            messageInput.value = '';
+            
+            // Show typing indicator
+            showTyping();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Hide typing and add AI response
+                hideTyping();
+                addMessage(data.response);
+                
+                // Update context info
+                updateContext(data.context, data.stage);
+                
+            } catch (error) {
+                hideTyping();
+                addMessage(`Hata: ${error.message} ❌`);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function resetChat() {
+            if (!confirm('Konuşmayı sıfırlamak istediğinizden emin misiniz?')) {
+                return;
+            }
+            
+            try {
+                await fetch('/api/reset', { method: 'POST' });
+                
+                // Clear messages
+                const messagesContainer = document.getElementById('messages');
+                messagesContainer.innerHTML = `
+                    <div class="message ai">
+                        <div class="message-bubble">
+                            Merhaba! B2B silindir uzmanınızım. Size nasıl yardımcı olabilirim? 😊
+                        </div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                `;
+                
+                // Reset context
+                document.getElementById('contextDetails').innerHTML = 'Başlangıç';
+                
+            } catch (error) {
+                alert('Sıfırlama hatası: ' + error.message);
+            }
+        }
+
+        // Auto-focus input
+        document.getElementById('messageInput').focus();
+        
+        // Add some example messages for demo
+        setTimeout(() => {
+            const examples = [
+                "💡 Örnek sorular:",
+                "• Merhaba, naber?",
+                "• 100 çap silindir lazım",
+                "• Magnetik silindir var mı?",
+                "• 5 adet istiyorum"
+            ];
+            
+            // Show examples briefly
+            addMessage(examples.join('<br>'));
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "memory-keeper": {
+      "type": "stdio", 
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-memory"],
+      "env": {}
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx", 
+      "args": ["@modelcontextprotocol/server-sequential-thinking"],
+      "env": {}
+    }
+  }
+}
