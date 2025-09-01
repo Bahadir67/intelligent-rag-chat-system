@@ -9,6 +9,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from typing import Dict, List, Optional
+from openrouter_client import openrouter_client
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
@@ -65,7 +66,44 @@ class B2BConversationSystem:
         }
 
     def parse_user_input(self, query: str) -> Dict:
-        """Kullanıcı girdisini parse et"""
+        """AI-powered spec extraction from user input"""
+        try:
+            # Get conversation context for better AI understanding
+            context = {
+                'previous_queries': [q['query'] for q in self.context.user_query_history[-3:]],
+                'current_specs': self.context.extracted_specs,
+                'conversation_stage': self.context.conversation_stage
+            }
+            
+            # Use OpenRouter AI for spec extraction
+            ai_response = openrouter_client.extract_specifications(query, context)
+            
+            # Convert AI response to expected format
+            parsed = {
+                'diameter': ai_response.extracted_specs.get('diameter'),
+                'stroke': ai_response.extracted_specs.get('stroke'),
+                'features': ai_response.extracted_specs.get('features', []),
+                'quantity': ai_response.extracted_specs.get('quantity'),
+                'brand_preference': ai_response.extracted_specs.get('brand_preference'),
+                'tone': 'friendly' if any(word in query.lower() for word in self.friendly_words) else 'professional',
+                'ai_response': ai_response.suggested_response,
+                'intent': ai_response.intent,
+                'confidence': ai_response.confidence
+            }
+            
+            print(f"[AI] Extracted specs: {parsed}")
+            print(f"[AI] Intent: {ai_response.intent} (confidence: {ai_response.confidence:.2f})")
+            
+            return parsed
+            
+        except Exception as e:
+            print(f"[AI] Error in spec extraction, falling back to regex: {e}")
+            
+            # Fallback to original regex method if AI fails
+            return self._parse_user_input_regex(query)
+    
+    def _parse_user_input_regex(self, query: str) -> Dict:
+        """Fallback regex-based parsing (original method)"""
         query_upper = query.upper()
         parsed = {
             'diameter': None,
@@ -95,7 +133,7 @@ class B2BConversationSystem:
                 parsed['stroke'] = int(matches[0])
                 break
         
-        # Quantity detection - only if it's clearly quantity, not dimension
+        # Quantity detection
         quantity_patterns = [r'(\d+)\s*(?:ADET|TANE|PARÇA|PIECE)']
         for pattern in quantity_patterns:
             matches = re.findall(pattern, query_upper)
@@ -206,14 +244,55 @@ class B2BConversationSystem:
             return []
 
     def generate_response(self, user_input: str) -> str:
-        """Kullanıcı girdisine göre yanıt üret"""
-        # Parse input
+        """AI-enhanced response generation with natural language flow"""
+        # Parse user input with AI
         parsed = self.parse_user_input(user_input)
+        
+        # Add to conversation context
         self.context.add_query(user_input)
-        self.context.user_tone = parsed['tone']
+        self.context.user_tone = parsed.get('tone', 'professional')
         
         # Update context with new information
-        self.context.update_specs(parsed)
+        specs_to_update = {k: v for k, v in parsed.items() 
+                          if k in ['diameter', 'stroke', 'features', 'quantity', 'brand_preference'] and v is not None}
+        self.context.update_specs(specs_to_update)
+        
+        # Try AI-powered response generation first
+        if parsed.get('ai_response') and parsed.get('confidence', 0) > 0.7:
+            print(f"[AI] High confidence response (confidence: {parsed['confidence']:.2f})")
+            return self._enhance_ai_response_with_data(parsed, user_input)
+        
+        # Fallback to structured response logic
+        return self._generate_structured_response(parsed)
+    
+    def _enhance_ai_response_with_data(self, parsed: Dict, user_input: str) -> str:
+        """Enhance AI response with database data"""
+        ai_response = parsed['ai_response']
+        
+        # If AI detected specs, try to add product data
+        diameter = parsed.get('diameter')
+        stroke = parsed.get('stroke')
+        
+        if diameter and stroke:
+            products = self.search_exact_product(diameter, stroke, parsed.get('features', []))
+            if products:
+                ai_response += f"\n\n🎯 {len(products)} ürün buldum:\n"
+                for i, product in enumerate(products[:3], 1):
+                    ai_response += f"{i}. {product['name']} - {product['price']:.2f} TL\n"
+                ai_response += "\nHangi ürünü seçmek istiyorsunuz?"
+                self.context.selected_products = products
+                self.context.conversation_stage = 'product_selection'
+        elif diameter and not stroke:
+            stroke_options = self.get_stroke_options(diameter)
+            if stroke_options:
+                ai_response += f"\n\n🔧 {diameter}mm için mevcut stroklar:\n"
+                for stroke_val in sorted(stroke_options.keys())[:5]:
+                    ai_response += f"• {stroke_val}mm strok\n"
+        
+        return ai_response
+    
+    def _generate_structured_response(self, parsed: Dict) -> str:
+        """Structured response generation (fallback method)"""
         
         # Response generation based on conversation stage and available information
         diameter = self.context.extracted_specs['diameter']
@@ -480,17 +559,45 @@ def main():
             if not user_input:
                 continue
             
-            # Handle different conversation stages
+            # AI-powered intent classification for better conversation flow
+            try:
+                conversation_history = [q['query'] for q in conversation_system.context.user_query_history[-3:]]
+                user_intent = openrouter_client.classify_intent(user_input, conversation_history)
+                print(f"[AI] Detected intent: {user_intent}")
+            except Exception as e:
+                print(f"[AI] Intent classification failed: {e}")
+                user_intent = "general_question"
+            
+            # Handle different conversation stages with AI intent awareness
             stage = conversation_system.context.conversation_stage
             
-            if stage == 'product_selection' and user_input.isdigit():
+            # Special handling for AI-detected intents
+            if user_intent == "greeting":
+                response = "Merhaba! Size nasıl yardımcı olabilirim? Hangi silindir özelliklerini arıyorsunuz?"
+            elif user_intent == "price_inquiry" and not conversation_system.context.selected_products:
+                response = "Fiyat bilgisi için önce ürün özelliklerini belirtmeniz gerekiyor. Hangi çap ve strok aralığında silindir arıyorsunuz?"
+            elif stage == 'product_selection' and (user_input.isdigit() or user_intent == "order_intent"):
                 response = conversation_system.handle_product_selection(user_input)
             elif stage == 'order_creation' and user_input.isdigit():
                 response = conversation_system.handle_quantity_input(user_input)
             elif stage == 'order_confirmation':
                 response = conversation_system.handle_order_confirmation(user_input)
-            else:
+            elif user_intent == "product_search" or user_intent == "spec_question":
                 response = conversation_system.generate_response(user_input)
+            else:
+                # Default response generation with AI assistance
+                try:
+                    products = conversation_system.context.selected_products if conversation_system.context.selected_products else None
+                    context_data = {
+                        'stage': stage,
+                        'specs': conversation_system.context.extracted_specs,
+                        'intent': user_intent
+                    }
+                    ai_response = openrouter_client.generate_response(user_input, context_data, products)
+                    response = ai_response if ai_response else conversation_system.generate_response(user_input)
+                except Exception as e:
+                    print(f"[AI] Response generation failed: {e}")
+                    response = conversation_system.generate_response(user_input)
             
             print(f"\n🤖 AI: {response}")
             
