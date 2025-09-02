@@ -147,7 +147,7 @@ def process_whatsapp_message():
             system.context.selected_products):
             
             # Cloudflare tunnel URL - GÜNCEL
-            base_url = "https://sep-legislative-paperback-expressions.trycloudflare.com"
+            base_url = "https://there-gathering-qty-helpful.trycloudflare.com"
             clean_phone = from_number.replace('@c.us', '').replace('+', '')
             product_link = f"{base_url}/whatsapp/products/{clean_phone}"
             
