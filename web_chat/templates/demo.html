@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 B2B RAG System Demo Environment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .demo-header h1 {
+            color: #333;
+            font-size: 3em;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .demo-header p {
+            color: #666;
+            font-size: 1.3em;
+            margin-bottom: 30px;
+        }
+
+        .demo-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .demo-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chat-demo {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-demo-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-status {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .chat-demo-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .demo-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .demo-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .panel-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .demo-scenario {
+            background: #f0f7ff;
+            border-left: 4px solid #4facfe;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-scenario:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .scenario-title {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 5px;
+        }
+
+        .scenario-desc {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .metrics-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4facfe;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .demo-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .system-info {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-value {
+            color: #666;
+        }
+
+        .test-scenarios {
+            margin-top: 20px;
+        }
+
+        .scenario-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            transition: background 0.3s ease;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .demo-features {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-display {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🚀 B2B RAG System Demo</h1>
+            <p>Intelligent Sales Assistant with Natural Language Processing</p>
+            
+            <div class="demo-features">
+                <span class="feature-badge">🤖 OpenRouter AI Integration</span>
+                <span class="feature-badge">🧠 Context Memory</span>
+                <span class="feature-badge">🎯 Intent Classification</span>
+                <span class="feature-badge">📊 Real-time Analytics</span>
+                <span class="feature-badge">🗣️ Natural Language</span>
+                <span class="feature-badge">⚡ Sub-2s Response</span>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/" class="demo-btn btn-primary">🚀 Launch Chat Demo</a>
+                <a href="/analytics" class="demo-btn btn-secondary">📊 View Analytics</a>
+                <button class="demo-btn btn-success" onclick="runSystemTest()">🧪 Run System Test</button>
+            </div>
+        </div>
+
+        <div class="demo-sections">
+            <div class="chat-demo">
+                <div class="chat-demo-header">
+                    <span>💬 Live Chat Demo</span>
+                    <span class="demo-status" id="demoStatus">🟢 Ready</span>
+                </div>
+                <div class="chat-demo-body" id="chatDemo">
+                    <iframe src="/" width="100%" height="100%" frameborder="0" style="border-radius: 0 0 20px 20px;"></iframe>
+                </div>
+            </div>
+
+            <div class="demo-sidebar">
+                <div class="demo-panel">
+                    <div class="panel-title">🎭 Test Scenarios</div>
+                    
+                    <div class="demo-scenario" onclick="sendTestMessage('Merhaba, 50mm çaplı silindir arıyorum')">
+                        <div class="scenario-title">Basic Product Search</div>
+                        <div class="scenario-desc">Test AI spec extraction with diameter</div>
+                    </div>
+
+                    <div class="demo-scenario" onclick="sendTestMessage('100x400 pnömatik silindir lazım, 3 adet')">
+                        <div class="scenario-title">Complete Specification</div>
+                        <div class="scenario-desc">Full specs with features and quantity</div>
+                    </div>
+
+                    <div class="demo-scenario" onclick="sendTestMessage('Festo marka çift etkili silindir fiyatı?')">
+                        <div class="scenario-title">Brand & Feature Query</div>
+                        <div class="scenario-desc">Test brand preference and features</div>
+                    </div>
+
+                    <div class="demo-scenario" onclick="sendTestMessage('Sipariş vermek istiyorum')">
+                        <div class="scenario-title">Order Intent</div>
+                        <div class="scenario-desc">Test order flow and workflow</div>
+                    </div>
+
+                    <div class="test-scenarios">
+                        <input type="text" class="scenario-input" id="customMessage" placeholder="Or type your own test message...">
+                        <button class="demo-btn btn-primary" onclick="sendCustomMessage()" style="width: 100%;">Send Custom Test</button>
+                    </div>
+                </div>
+
+                <div class="demo-panel">
+                    <div class="panel-title">📊 Live Metrics</div>
+                    <div class="metrics-display" id="liveMetrics">
+                        <div class="metric-item">
+                            <div class="metric-value" id="totalTests">0</div>
+                            <div class="metric-label">Total Tests</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="avgResponse">0s</div>
+                            <div class="metric-label">Avg Response</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="successRate">100%</div>
+                            <div class="metric-label">Success Rate</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="lastIntent">-</div>
+                            <div class="metric-label">Last Intent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-panel">
+                    <div class="panel-title">🛠️ System Status</div>
+                    <div class="system-info">
+                        <div class="info-row">
+                            <span class="info-label">AI Status:</span>
+                            <span class="info-value" id="aiStatus">🟢 Active</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Database:</span>
+                            <span class="info-value" id="dbStatus">🟢 Connected</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Memory Context:</span>
+                            <span class="info-value" id="memoryStatus">🟢 Active</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">OpenRouter API:</span>
+                            <span class="info-value" id="apiStatus">🟢 Connected</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Response Time:</span>
+                            <span class="info-value" id="responseTime">~2.0s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="/">🏠 Home</a>
+            <a href="/demo">🚀 Demo</a>
+            <a href="/analytics">📊 Analytics</a>
+            <a href="https://github.com/Bahadir67/intelligent-rag-chat-system" target="_blank">📂 GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        let testMetrics = {
+            total: 0,
+            responses: [],
+            errors: 0
+        };
+
+        async function sendTestMessage(message) {
+            console.log('Sending test message:', message);
+            updateDemoStatus('🤔 Testing...');
+            
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        session_id: 'demo_' + Date.now()
+                    })
+                });
+                
+                const data = await response.json();
+                const endTime = performance.now();
+                const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Update metrics
+                testMetrics.total++;
+                testMetrics.responses.push(parseFloat(responseTime));
+                
+                updateLiveMetrics(data.intent, responseTime);
+                updateDemoStatus('✅ Test Complete');
+                
+                console.log('Test result:', {
+                    message,
+                    response: data.response,
+                    intent: data.intent,
+                    responseTime
+                });
+                
+                // Reset status after 2 seconds
+                setTimeout(() => updateDemoStatus('🟢 Ready'), 2000);
+                
+            } catch (error) {
+                testMetrics.errors++;
+                updateDemoStatus('❌ Test Failed');
+                console.error('Test error:', error);
+                
+                // Reset status after 3 seconds
+                setTimeout(() => updateDemoStatus('🟢 Ready'), 3000);
+            }
+        }
+
+        function sendCustomMessage() {
+            const input = document.getElementById('customMessage');
+            const message = input.value.trim();
+            
+            if (message) {
+                sendTestMessage(message);
+                input.value = '';
+            }
+        }
+
+        function updateDemoStatus(status) {
+            document.getElementById('demoStatus').textContent = status;
+        }
+
+        function updateLiveMetrics(intent, responseTime) {
+            document.getElementById('totalTests').textContent = testMetrics.total;
+            
+            if (testMetrics.responses.length > 0) {
+                const avgResponse = (testMetrics.responses.reduce((a, b) => a + b, 0) / testMetrics.responses.length).toFixed(1);
+                document.getElementById('avgResponse').textContent = avgResponse + 's';
+            }
+            
+            const successRate = testMetrics.total > 0 ? (((testMetrics.total - testMetrics.errors) / testMetrics.total) * 100).toFixed(0) : 100;
+            document.getElementById('successRate').textContent = successRate + '%';
+            
+            document.getElementById('lastIntent').textContent = intent || 'N/A';
+        }
+
+        async function runSystemTest() {
+            updateDemoStatus('🧪 Running System Test...');
+            
+            const testMessages = [
+                'Merhaba',
+                '50mm silindir var mı?',
+                '100x200 silindir lazım',
+                'Fiyat nedir?',
+                '3 adet istiyorum'
+            ];
+            
+            for (let i = 0; i < testMessages.length; i++) {
+                updateDemoStatus(`🧪 Test ${i + 1}/${testMessages.length}`);
+                await sendTestMessage(testMessages[i]);
+                
+                // Wait between tests
+                if (i < testMessages.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            updateDemoStatus('✅ System Test Complete');
+            setTimeout(() => updateDemoStatus('🟢 Ready'), 2000);
+        }
+
+        async function checkSystemStatus() {
+            try {
+                // Test API connectivity
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('apiStatus').textContent = '🔴 Error';
+                } else {
+                    document.getElementById('apiStatus').textContent = '🟢 Connected';
+                    
+                    if (data.avg_response_time) {
+                        document.getElementById('responseTime').textContent = `~${data.avg_response_time}s`;
+                    }
+                }
+                
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '🔴 Offline';
+                console.error('Status check failed:', error);
+            }
+        }
+
+        // Handle Enter key in custom message input
+        document.getElementById('customMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCustomMessage();
+            }
+        });
+
+        // Initial status check
+        window.addEventListener('load', () => {
+            checkSystemStatus();
+            
+            // Check status every 30 seconds
+            setInterval(checkSystemStatus, 30000);
+        });
+    </script>
+</body>
+</html>

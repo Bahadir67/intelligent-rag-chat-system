@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Seçimi - B2B Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .criteria {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .criteria h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .criteria-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: #007bff;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .products-container {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .product-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .product-item {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .product-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .product-item.selected {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .product-details {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .actions {
+            background: #f8f9fa;
+            padding: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-select {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-select:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-select:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .no-products {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Ürün Seçimi</h1>
+            <p>Arama kriterlerinize uygun ürünler listelenmektedir</p>
+        </div>
+
+        <div class="criteria">
+            <h3>Arama Kriterleri:</h3>
+            <div class="criteria-tags" id="criteriaContainer">
+                <!-- Kriterler dinamik yüklenecek -->
+            </div>
+        </div>
+
+        <div class="products-container">
+            <div id="loadingMessage" class="loading">
+                <div>🔄 Ürünler yükleniyor...</div>
+            </div>
+            
+            <div id="noProducts" class="no-products" style="display: none;">
+                <div>😔 Arama kriterlerinize uygun ürün bulunamadı</div>
+            </div>
+
+            <div class="product-grid" id="productGrid" style="display: none;">
+                <!-- Ürünler dinamik yüklenecek -->
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-select" id="selectBtn" onclick="selectProduct()" disabled>
+                ✅ Seç
+            </button>
+            <button class="btn btn-cancel" onclick="cancelSelection()">
+                ❌ Vazgeç
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedProductId = null;
+        let sessionId = null;
+        let searchCriteria = {};
+
+        // URL parametrelerini al
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                session_id: params.get('session_id'),
+                criteria: params.get('criteria') ? JSON.parse(decodeURIComponent(params.get('criteria'))) : {}
+            };
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = getUrlParams();
+            sessionId = params.session_id;
+            searchCriteria = params.criteria;
+
+            displayCriteria(searchCriteria);
+            loadProducts();
+        });
+
+        // Kriterleri göster
+        function displayCriteria(criteria) {
+            const container = document.getElementById('criteriaContainer');
+            container.innerHTML = '';
+
+            for (const [key, value] of Object.entries(criteria)) {
+                if (value) {
+                    const tag = document.createElement('span');
+                    tag.className = 'tag';
+                    tag.textContent = `${key}: ${value}`;
+                    container.appendChild(tag);
+                }
+            }
+        }
+
+        // Ürünleri yükle
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/search_products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        criteria: searchCriteria
+                    })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('loadingMessage').style.display = 'none';
+                
+                if (data.products && data.products.length > 0) {
+                    displayProducts(data.products);
+                } else {
+                    document.getElementById('noProducts').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('loadingMessage').innerHTML = 
+                    '<div style="color: red;">❌ Ürünler yüklenirken hata oluştu</div>';
+            }
+        }
+
+        // Ürünleri göster
+        function displayProducts(products) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            grid.style.display = 'grid';
+
+            products.forEach(product => {
+                const productItem = document.createElement('div');
+                productItem.className = 'product-item';
+                productItem.onclick = () => selectProductItem(product.id, productItem);
+
+                productItem.innerHTML = `
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-details">
+                        <div class="detail-item">
+                            <span>💰</span>
+                            <span>${product.price ? product.price.toFixed(2) + ' TL' : 'Fiyat sorulacak'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>📦</span>
+                            <span>${product.stock || 0} adet</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>🏷️</span>
+                            <span>${product.brand || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(productItem);
+            });
+        }
+
+        // Ürün seçimi
+        function selectProductItem(productId, element) {
+            // Önceki seçimi temizle
+            document.querySelectorAll('.product-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Yeni seçimi işaretle
+            element.classList.add('selected');
+            selectedProductId = productId;
+            
+            document.getElementById('selectBtn').disabled = false;
+        }
+
+        // Ürün seçimini onayla
+        async function selectProduct() {
+            if (!selectedProductId) return;
+
+            try {
+                const response = await fetch('/api/select_product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        product_id: selectedProductId
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Ana chat sayfasına mesaj gönder
+                    if (window.opener) {
+                        // Ana sayfaya seçim yapıldığını bildir
+                        window.opener.postMessage({
+                            type: 'PRODUCT_SELECTED',
+                            sessionId: sessionId,
+                            productName: data.selected_product.name
+                        }, window.location.origin);
+                        window.close();
+                    } else {
+                        window.location.href = `/?session_id=${sessionId}`;
+                    }
+                } else {
+                    alert('Seçim kaydedilirken hata oluştu: ' + (data.error || 'Bilinmeyen hata'));
+                }
+
+            } catch (error) {
+                console.error('Error selecting product:', error);
+                alert('Seçim kaydedilirken hata oluştu');
+            }
+        }
+
+        // Seçimi iptal et
+        function cancelSelection() {
+            // Ana chat sayfasına dön - opener kullanarak ana pencereyi yönlendir
+            if (window.opener) {
+                window.close();
+            } else {
+                window.location.href = `/?session_id=${sessionId}`;
+            }
+        }
+    </script>
+</body>
+</html>

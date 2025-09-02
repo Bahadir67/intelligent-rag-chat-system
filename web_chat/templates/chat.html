@@ -39,6 +39,26 @@
             text-align: center;
             font-size: 1.2em;
             font-weight: 600;
+            position: relative;
+        }
+        
+        .ai-status {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        
+        .context-display {
+            background: rgba(255,255,255,0.1);
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            text-align: left;
         }
 
         .chat-messages {
@@ -232,7 +252,12 @@
     <div class="chat-container">
         <div class="chat-header">
             🤖 B2B Silindir AI Assistant
+            <div class="ai-status" id="aiStatus">🟢 AI Aktif</div>
             <button class="reset-btn" onclick="resetChat()">🔄 Yeni Sohbet</button>
+            <div class="context-display" id="contextDisplay" style="display: none;">
+                <strong>🧠 AI Context:</strong>
+                <div id="contextSpecs"></div>
+            </div>
         </div>
         
         <div class="chat-messages" id="messages">
@@ -265,6 +290,7 @@
 
     <script>
         let isTyping = false;
+        let sessionId = 'web_' + Math.random().toString(36).substr(2, 9); // Fixed session ID
 
         function getCurrentTime() {
             const now = new Date();
@@ -274,16 +300,37 @@
             });
         }
 
-        function addMessage(message, isUser = false) {
+        function addMessage(message, isUser = false, showProductSelection = false, context = null) {
             const messagesContainer = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
             
-            messageDiv.innerHTML = `
+            let messageContent = `
                 <div class="message-bubble">${message}</div>
                 <div class="message-time">${getCurrentTime()}</div>
             `;
             
+            // Add product selection button if needed
+            if (showProductSelection && context) {
+                messageContent += `
+                    <div style="margin-top: 10px;">
+                        <button onclick="openProductSelection()" style="
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: background 0.3s;
+                        " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
+                            🛒 Ürünleri Görüntüle ve Seç
+                        </button>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = messageContent;
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -303,18 +350,44 @@
             document.getElementById('sendBtn').disabled = false;
         }
 
-        function updateContext(context, stage) {
+        function updateContext(context, stage, intent, responseTime) {
+            // Update context info panel
             const contextInfo = document.getElementById('contextInfo');
             const contextDetails = document.getElementById('contextDetails');
             
-            let details = `Stage: ${stage}`;
+            let details = `Stage: ${stage}<br>Intent: ${intent}`;
+            if (responseTime) details += `<br>Response: ${responseTime}s`;
             if (context.diameter) details += `<br>Çap: ${context.diameter}mm`;
             if (context.stroke) details += `<br>Strok: ${context.stroke}mm`;
+            if (context.quantity) details += `<br>Adet: ${context.quantity}`;
             if (context.features && context.features.length > 0) {
                 details += `<br>Özellikler: ${context.features.join(', ')}`;
             }
+            if (context.brand_preference) details += `<br>Marka: ${context.brand_preference}`;
             
             contextDetails.innerHTML = details;
+            
+            // Update header context display
+            const contextDisplay = document.getElementById('contextDisplay');
+            const contextSpecs = document.getElementById('contextSpecs');
+            
+            if (context.diameter || context.stroke || context.features.length > 0) {
+                let specs = [];
+                if (context.diameter) specs.push(`Çap: ${context.diameter}mm`);
+                if (context.stroke) specs.push(`Strok: ${context.stroke}mm`);
+                if (context.quantity) specs.push(`Adet: ${context.quantity}`);
+                if (context.features.length > 0) specs.push(`Özellikler: ${context.features.join(', ')}`);
+                
+                contextSpecs.innerHTML = specs.join(' | ');
+                contextDisplay.style.display = 'block';
+            } else {
+                contextDisplay.style.display = 'none';
+            }
+        }
+        
+        function updateAIStatus(status, color = '🟢') {
+            const aiStatus = document.getElementById('aiStatus');
+            aiStatus.innerHTML = `${color} ${status}`;
         }
 
         async function sendMessage() {
@@ -327,19 +400,26 @@
             addMessage(message, true);
             messageInput.value = '';
             
-            // Show typing indicator
+            // Show typing indicator and update status
             showTyping();
+            updateAIStatus('AI Düşünüyor...', '🤔');
             
             try {
+                const startTime = performance.now();
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ 
+                        message: message,
+                        session_id: sessionId
+                    })
                 });
                 
                 const data = await response.json();
+                const endTime = performance.now();
+                const clientResponseTime = ((endTime - startTime) / 1000).toFixed(2);
                 
                 if (data.error) {
                     throw new Error(data.error);
@@ -347,14 +427,39 @@
                 
                 // Hide typing and add AI response
                 hideTyping();
-                addMessage(data.response);
+                updateAIStatus('AI Aktif', '🟢');
                 
-                // Update context info
-                updateContext(data.context, data.stage);
+                // Enhanced response display with metadata
+                let responseText = data.response;
+                let showProductSelection = false;
+                
+                if (data.products > 0 && data.stage === 'product_selection') {
+                    responseText += `\n\n📦 ${data.products} ürün bulundu`;
+                    showProductSelection = true;
+                }
+                
+                addMessage(responseText, false, showProductSelection, data.context);
+                
+                // Update context info with AI data
+                updateContext(data.context, data.stage, data.intent, data.response_time);
+                
+                console.log('[AI Debug]', {
+                    intent: data.intent,
+                    stage: data.stage,
+                    responseTime: data.response_time,
+                    clientTime: clientResponseTime,
+                    context: data.context
+                });
                 
             } catch (error) {
                 hideTyping();
-                addMessage(`Hata: ${error.message} ❌`);
+                updateAIStatus('AI Hatası', '🔴');
+                addMessage(`Sistem Hatası: ${error.message} ❌`);
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                    updateAIStatus('AI Aktif', '🟢');
+                }, 3000);
             }
         }
 
@@ -392,8 +497,90 @@
             }
         }
 
+        // Product selection functionality
+        function openProductSelection() {
+            // Get current context from the conversation
+            const contextDetails = document.getElementById('contextDetails').innerHTML;
+            
+            // Extract criteria from context (simple approach)
+            const criteria = {};
+            
+            // Parse context details to extract search criteria
+            if (contextDetails.includes('Çap:')) {
+                const diameterMatch = contextDetails.match(/Çap:\s*(\d+)mm/);
+                if (diameterMatch) criteria.diameter = diameterMatch[1];
+            }
+            
+            if (contextDetails.includes('Strok:')) {
+                const strokeMatch = contextDetails.match(/Strok:\s*(\d+)mm/);
+                if (strokeMatch) criteria.stroke = strokeMatch[1];
+            }
+            
+            if (contextDetails.includes('silindir')) {
+                criteria.product_type = 'silindir';
+            } else if (contextDetails.includes('valf')) {
+                criteria.product_type = 'valf';
+            }
+            
+            // Build URL with parameters
+            const params = new URLSearchParams({
+                session_id: sessionId,
+                criteria: JSON.stringify(criteria)
+            });
+            
+            // Open product selection page
+            window.open(`/product_selection?${params.toString()}`, '_blank', 'width=1000,height=800');
+        }
+
         // Auto-focus input
         document.getElementById('messageInput').focus();
+        
+        // Listen for messages from product selection popup
+        window.addEventListener('message', function(event) {
+            // Güvenlik kontrolü
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'PRODUCT_SELECTED') {
+                console.log('Product selected:', event.data.productName);
+                // Kısa bir bekleme sonrası seçimi kontrol et
+                setTimeout(() => {
+                    checkForProductSelection();
+                }, 300);
+            }
+        });
+
+        // Check if product was selected and show AI message
+        async function checkForProductSelection() {
+            try {
+                console.log('Checking for product selection...', sessionId);
+                
+                const response = await fetch('/api/check_selection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Check selection response:', data);
+                
+                if (data.has_selection && data.ai_message) {
+                    console.log('Adding AI message:', data.ai_message);
+                    // Add AI message to chat
+                    addMessage(data.ai_message, false);
+                    
+                    // Update context display
+                    updateContext(data.context || {}, 'order_creation', 'product_selected', 0);
+                } else {
+                    console.log('No selection found or no AI message');
+                }
+            } catch (error) {
+                console.log('Selection check failed:', error);
+            }
+        }
         
         // Add some example messages for demo
         setTimeout(() => {

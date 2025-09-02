@@ -55,4 +55,5 @@ tmp/
 
 # API Keys
 config.py
-secrets.py
+secrets.pywhatsapp-webjs/node_modules/
+whatsapp-webjs/whatsapp-session/
