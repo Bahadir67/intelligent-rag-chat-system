@@ -895,7 +895,7 @@ class B2BConversationSystem:
                     # Multiple products - show list with link
                     response = f"✅ '{user_input}' için {len(products)} ürün buldum:\n\n"
                     # Use active tunnel URL
-                    base_url = "https://there-gathering-qty-helpful.trycloudflare.com"
+                    base_url = "https://fired-sq-remedies-cheapest.trycloudflare.com"
                     phone = self.context.phone_number if hasattr(self.context, 'phone_number') and self.context.phone_number else 'user'
                     response += f"🔗 Ürünleri görmek için: {base_url}/whatsapp/products/{phone}"
                     return response

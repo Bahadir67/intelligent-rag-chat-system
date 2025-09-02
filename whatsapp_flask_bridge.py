@@ -13,7 +13,7 @@ from flask import Flask, request, jsonify, render_template
 sys.path.append(os.path.dirname(__file__))
 from conversation_system import B2BConversationSystem
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='web_chat/templates')
 
 # Configure Flask for UTF-8
 app.config['JSON_AS_ASCII'] = False
@@ -147,7 +147,7 @@ def process_whatsapp_message():
             system.context.selected_products):
             
             # Cloudflare tunnel URL - GÜNCEL
-            base_url = "https://there-gathering-qty-helpful.trycloudflare.com"
+            base_url = "https://fired-sq-remedies-cheapest.trycloudflare.com"
             clean_phone = from_number.replace('@c.us', '').replace('+', '')
             product_link = f"{base_url}/whatsapp/products/{clean_phone}"
             
